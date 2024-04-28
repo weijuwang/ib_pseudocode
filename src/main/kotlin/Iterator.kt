@@ -93,10 +93,6 @@ class Iterator (private val string: String) {
      * Use [getSampleChar] if [reachedEnd] can be true; it will pass `null` to [function] in that case instead of
      * throwing an error.
      */
-    fun getSampleCharNotAtEnd(function: (Char) -> Boolean): Boolean {
-        val result = function(next()!!)
-        if (!result)
-            goBackOne()
-        return result
-    }
+    fun getSampleCharNotAtEnd(function: (Char) -> Boolean): Boolean =
+        getSampleChar { function(it!!) }
 }

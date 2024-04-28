@@ -113,8 +113,12 @@ class Tokenizer (val code: String) {
                 if (integerPartDigits.isNotEmpty()) {
                     val integerPart = integerPartDigits.sum()
 
-                    iterator.getSampleChar { nextDigit ->
-                        if (nextDigit == Decimal.DECIMAL_POINT) {
+                    /*
+                    If there's a decimal point following an integer then it's not really an integer, it's actually a
+                    decimal
+                     */
+                    iterator.getSampleChar { decimalPoint ->
+                        if (decimalPoint == Decimal.DECIMAL_POINT) {
                             val decimalPart = iterator
                                 .nextDigitSequence(base=10)
                                 .map { it.toDouble() }
@@ -122,11 +126,11 @@ class Tokenizer (val code: String) {
                                 .sum()
 
                             add(Decimal(integerPart + decimalPart))
+                            true
                         } else {
                             add(Integer(integerPart))
+                            iterator.reachedEnd()
                         }
-
-                        true
                     }
 
                     return@nextToken true
