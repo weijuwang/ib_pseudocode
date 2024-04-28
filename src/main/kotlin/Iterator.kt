@@ -1,3 +1,6 @@
+/**
+ * Custom string iterator.
+ */
 class Iterator (private val string: String) {
     var index: Int = 0
         private set
@@ -22,14 +25,7 @@ class Iterator (private val string: String) {
     }
 
     /**
-     * Moves the iterator back 1 character.
-     */
-    fun goBackOne() {
-        index--
-    }
-
-    /**
-     * Returns whether [literal] exists in the string.
+     * Returns whether [literal] exists in the string, advancing the iterator just past it if so.
      */
     fun nextIsLiteral(literal: String): Boolean {
         val returnPoint = index
@@ -44,11 +40,13 @@ class Iterator (private val string: String) {
     }
 
     /**
-     * Get the sequence of digits in the code starting at [index], returning an empty list if there are none. This is
-     * useful for parsing numbers.
+     * Get the sequence of digits in the code starting at [index], returning an empty list if there are none.
+     * The iterator moves just past the sequence of digits returned.
+     *
+     * Useful for parsing numbers.
      */
     fun nextDigitSequence(base: Int) = buildList {
-        doUntilEnd findSequence@ {
+        doUntilEndAnd {
             getSampleChar {
                 if (it!!.isDigit()) {
                     add(it.digitToInt(base))
@@ -61,7 +59,7 @@ class Iterator (private val string: String) {
     /**
      * Run [function] repeatedly until either the end of the string is reached or [function] returns false.
      */
-    fun doUntilEnd(function: () -> Boolean) {
+    fun doUntilEndAnd(function: () -> Boolean) {
         while (!reachedEnd()) {
             if (!function()) {
                 break
@@ -81,8 +79,9 @@ class Iterator (private val string: String) {
      */
     fun getSampleChar(function: (Char?) -> Boolean): Boolean {
         val result = function(next())
-        if (!result)
-            goBackOne()
+        if (!result) {
+            index--
+        }
         return result
     }
 
