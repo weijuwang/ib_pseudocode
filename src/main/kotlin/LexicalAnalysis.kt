@@ -1,7 +1,6 @@
 import LexicalAnalysis.TokenType.*
 import LexicalAnalysis.OperatorType.*
 import LexicalAnalysis.DefinedToken.*
-import kotlin.collections.Iterator
 import kotlin.math.pow
 
 /**
@@ -44,7 +43,7 @@ class LexicalAnalysis (val code: String) {
      * `true` if the entire [code] was tokenized. Otherwise, [firstInvalidCharIndex] gives the index of the first char
      * that could not be tokenized.
      */
-    val successful: Boolean
+    val successful: Boolean get() = firstInvalidCharIndex == code.length
 
     /**
      * The list of tokens in [code], including newlines.
@@ -212,14 +211,43 @@ class LexicalAnalysis (val code: String) {
         }
 
         firstInvalidCharIndex = iterator.index
-        successful = iterator.reachedEnd()
     }
 
     /**
-     * [KEYWORD] and [OPERATOR] are what the names suggest. [MISC] is anything else, including parentheses, commas, etc.
+     * The indices within the token list where each line begins.
+     *
+     * The first index is always 0 and the last index is always the number of tokens plus one.
+     */
+    private val lineStartPositions =
+        (
+            listOf(0)
+                + tokens.values
+                .mapIndexedNotNull { i, token ->
+                    (i + 1).takeIf { token == NEWLINE }
+                }
+                + listOf(tokens.size + 1)
+        )
+
+    /**
+     * A list of tokens in each non-empty line.
+     */
+    val lines = lineStartPositions
+        .dropLast(1)
+        .mapIndexed { lineNum, preLineStartIndex ->
+            tokens.toList().subList(preLineStartIndex, lineStartPositions[lineNum+1] - 1)
+        }
+        .filter { it.isNotEmpty() }
+
+    /**
+     * [KEYWORD], [BOOLEAN_LITERAL], and [OPERATOR] are what the names suggest.
+     *
+     * [COMMAND] is any statement that always begins with a certain keyword, like `if`, `else`, `loop`, `end`, `output`,
+     * or `input`. Commands are technically also keywords.
+     *
+     * [MISC] is anything else, including parentheses, commas, etc.
      */
     enum class TokenType {
-        KEYWORD, BOOLEAN_LITERAL, OPERATOR, MISC
+        COMMAND, KEYWORD, BOOLEAN_LITERAL, OPERATOR, MISC
     }
 
     /**
@@ -263,9 +291,14 @@ class LexicalAnalysis (val code: String) {
     interface Token
 
     /**
+     * [Literal] or [VariableName].
+     */
+    interface Value: Token
+
+    /**
      * [Integer], [Decimal], or [Str].
      */
-    interface Literal : Token
+    interface Literal : Value
 
     /**
      * [Integer] or [Decimal].
@@ -305,7 +338,7 @@ class LexicalAnalysis (val code: String) {
     /**
      * The name of a variable, which must be all uppercase.
      */
-    class VariableName(val name: String) : Token {
+    class VariableName(val name: String) : Value {
         companion object {
             val REGEX = "[_A-Z][_\\dA-Z]*".toRegex()
         }
@@ -345,20 +378,20 @@ class LexicalAnalysis (val code: String) {
         TRUE("true", BOOLEAN_LITERAL),
         FALSE("false", BOOLEAN_LITERAL),
 
-        OUTPUT("output", KEYWORD),
-        INPUT("input", KEYWORD),
+        OUTPUT("output", COMMAND),
+        INPUT("input", COMMAND),
 
-        IF("if", KEYWORD),
+        IF("if", COMMAND),
+        ELSE("else", COMMAND),
         THEN("then", KEYWORD),
-        ELSE("else", KEYWORD),
 
-        LOOP("loop", KEYWORD),
+        LOOP("loop", COMMAND),
         WHILE("while", KEYWORD),
         UNTIL("until", KEYWORD),
         FROM("from", KEYWORD),
         TO("to", KEYWORD),
 
-        END("end", KEYWORD),
+        END("end", COMMAND),
 
         NEWLINE(NEWLINE_CHAR.toString()),
 

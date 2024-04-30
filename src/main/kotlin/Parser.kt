@@ -1,40 +1,58 @@
+import LexicalAnalysis.*
+import LexicalAnalysis.DefinedToken.*
+import LexicalAnalysis.TokenType.*
+import LexicalAnalysis.OperatorType.*
+
 /**
  *
  */
-class Parser (val lexer: LexicalAnalysis) {
-    /**
-     * The list of tokens produced by the lexer.
-     */
-    private val tokens get() = lexer.tokens.values
+class Parser (val lexicalAnalysis: LexicalAnalysis) {
+    interface Ast
 
-    /**
-     * The indices within the token list where each line begins.
-     *
-     * The first index is always 0 and the last index is always the number of tokens plus one.
-     */
-    private val lineStartPositions =
-        (
-            listOf(0)
-            + tokens
-                .mapIndexedNotNull { i, token ->
-                    (i + 1).takeIf { token == LexicalAnalysis.DefinedToken.NEWLINE }
-                }
-            + listOf(tokens.size + 1)
+    interface Statement: Ast
+    interface Expression: Ast
+
+    data class Value (val value: LexicalAnalysis.Value) : Expression
+    data class UnaryOperation (val operator: DefinedToken, val operand: Expression) : Expression {
+        init {
+            assert(UNARY in operator.operatorTypes)
+        }
+    }
+    data class BinaryOperation (val operator: DefinedToken, val left: Expression, val right: Expression) : Expression {
+        init {
+            assert(operator.types == OPERATOR)
+        }
+    }
+    data class FunctionCall (val functionName: String, val params: List<Expression>) : Expression, Statement
+
+    data class Output (val expressions: List<Expression>) : Statement
+    data class Input (val variableName: String) : Statement
+    data class If (val condition: Expression) : Statement
+    data class ElseIf (val condition: Expression) : Statement
+    class Else : Statement
+    data class LoopWhile (val condition: Expression) : Statement
+    data class LoopUntil (val condition: Expression) : Statement
+    data class LoopRange (val start: Expression, val end: Expression) : Statement
+    data class Assignment (val variableName: String, val value: Expression) : Statement
+    class EndIf : Statement
+    class EndLoop : Statement
+
+    var index = 0
+        private set
+
+
+
+    companion object {
+        /**
+         * A list of commands that always begin with a certain keyword.
+         */
+        val commands: Map<DefinedToken, (List<Token>) -> Unit> = mapOf(
+            OUTPUT to {},
+            INPUT to {},
+            IF to {},
+            ELSE to {},
+            LOOP to {},
+            END to {}
         )
-
-    /**
-     * A list of tokens in each non-empty line.
-     */
-    val lines = lineStartPositions
-        .dropLast(1)
-        .mapIndexed { lineNum, preLineStartIndex ->
-            tokens.toList().subList(preLineStartIndex, lineStartPositions[lineNum+1] - 1)
-        }
-        .filter { it.isNotEmpty() }
-
-    init {
-        for (line in lines) {
-            println(line)
-        }
     }
 }
