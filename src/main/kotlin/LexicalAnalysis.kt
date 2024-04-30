@@ -214,31 +214,6 @@ class LexicalAnalysis (val code: String) {
     }
 
     /**
-     * The indices within the token list where each line begins.
-     *
-     * The first index is always 0 and the last index is always the number of tokens plus one.
-     */
-    private val lineStartPositions =
-        (
-            listOf(0)
-                + tokens.values
-                .mapIndexedNotNull { i, token ->
-                    (i + 1).takeIf { token == NEWLINE }
-                }
-                + listOf(tokens.size + 1)
-        )
-
-    /**
-     * A list of tokens in each non-empty line.
-     */
-    val lines = lineStartPositions
-        .dropLast(1)
-        .mapIndexed { lineNum, preLineStartIndex ->
-            tokens.toList().subList(preLineStartIndex, lineStartPositions[lineNum+1] - 1)
-        }
-        .filter { it.isNotEmpty() }
-
-    /**
      * [KEYWORD], [BOOLEAN_LITERAL], and [OPERATOR] are what the names suggest.
      *
      * [COMMAND] is any statement that always begins with a certain keyword, like `if`, `else`, `loop`, `end`, `output`,
