@@ -1,6 +1,5 @@
-import LexicalAnalysis.TokenType.*
-import LexicalAnalysis.OperatorType.*
-import LexicalAnalysis.DefinedToken.*
+import LexicalAnalysis.DefinedToken.Type.*
+
 import kotlin.math.pow
 
 /**
@@ -53,9 +52,10 @@ class LexicalAnalysis (val code: String) {
      */
     val tokens: Map<Int, Token> = buildMap {
         val iterator = Iterator(code)
+        var tokenStartIndex = 0
 
         fun addToken(token: Token) {
-            put(iterator.index, token)
+            put(tokenStartIndex, token)
         }
 
         iterator.doUntilEndAnd nextToken@ {
@@ -63,6 +63,8 @@ class LexicalAnalysis (val code: String) {
             if (iterator.getSampleChar { it in WHITESPACE_CHARS }) {
                 return@nextToken true
             }
+
+            tokenStartIndex = iterator.index
 
             //////////////////////////////////////////////////////////////////////////
 
@@ -87,10 +89,23 @@ class LexicalAnalysis (val code: String) {
             }
 
             if (identifierName.isNotEmpty()) {
-                // If it's actually a keyword then add that instead of making it a variable or method
+                /*
+                Annoying thing: a lot of keywords and `true`/`false` look like identifier names. We can sort this out by
+                checking if it's one of those.
+                 */
+
+                // Check keywords
                 for (token in DefinedToken.entries) {
                     if (identifierName == token.value) {
                         addToken(token)
+                        return@nextToken true
+                    }
+                }
+
+                // Check boolean literals
+                for ((translation, value) in Bool.values) {
+                    if (identifierName == value) {
+                        addToken(Bool(translation))
                         return@nextToken true
                     }
                 }
@@ -122,8 +137,10 @@ class LexicalAnalysis (val code: String) {
                 If there's a decimal point following an integer then it's not really an integer, it's actually a
                 decimal
                  */
-                iterator.getSampleChar { decimalPoint ->
-                    if (decimalPoint == Decimal.DECIMAL_POINT) {
+                val alreadyAtEnd = iterator.reachedEnd()
+
+                iterator.getSampleChar { nextChar ->
+                    if (nextChar == Decimal.DECIMAL_POINT) {
                         val decimalPart = iterator
                             .nextDigitSequence(base=10)
                             .map { it.toDouble() }
@@ -134,9 +151,12 @@ class LexicalAnalysis (val code: String) {
                         true
                     } else {
                         addToken(Integer(integerPart))
-                        iterator.reachedEnd()
+                        alreadyAtEnd
                     }
                 }
+
+
+
 
                 return@nextToken true
             }
@@ -167,7 +187,7 @@ class LexicalAnalysis (val code: String) {
 
                     // Comments are always terminated by newlines or the end of the code
                     if (!iterator.reachedEnd())
-                        addToken(NEWLINE)
+                        addToken(DefinedToken.NEWLINE)
                 },
 
                 // String
@@ -214,53 +234,6 @@ class LexicalAnalysis (val code: String) {
     }
 
     /**
-     * [KEYWORD], [BOOLEAN_LITERAL], and [OPERATOR] are what the names suggest.
-     *
-     * [COMMAND] is any statement that always begins with a certain keyword, like `if`, `else`, `loop`, `end`, `output`,
-     * or `input`. Commands are technically also keywords.
-     *
-     * [MISC] is anything else, including parentheses, commas, etc.
-     */
-    enum class TokenType {
-        COMMAND, KEYWORD, BOOLEAN_LITERAL, OPERATOR, MISC
-    }
-
-    /**
-     * Various types of operators.
-     */
-    enum class OperatorType {
-        /**
-         * Binary operator on two numbers returning a number, where a number is an integer or float.
-         */
-        NUMERICAL,
-
-        /**
-         * Binary operator on two strings returning a string.
-         */
-        STRING,
-
-        /**
-         * Binary operator on two Booleans returning a Boolean.
-         */
-        BOOLEAN,
-
-        /**
-         * Binary operator on two numbers returning a Boolean, where a number is an integer or float.
-         */
-        NUMERICAL_COMPARISON,
-
-        /**
-         * Binary operator on two strings returning a Boolean.
-         */
-        STRING_COMPARISON,
-
-        /**
-         * Unary operator.
-         */
-        UNARY
-    }
-
-    /**
      * All tokens inherit from here.
      */
     interface Token
@@ -271,9 +244,21 @@ class LexicalAnalysis (val code: String) {
     interface Value: Token
 
     /**
-     * [Integer], [Decimal], or [Str].
+     * [Bool], [Integer], [Decimal], or [Str].
      */
     interface Literal : Value
+
+    /**
+     * A Boolean literal.
+     */
+    data class Bool(val value: Boolean) : Literal {
+        companion object {
+            val values = mapOf(
+                true to "true",
+                false to "false"
+            )
+        }
+    }
 
     /**
      * [Integer] or [Decimal].
@@ -283,12 +268,12 @@ class LexicalAnalysis (val code: String) {
     /**
      * An integer literal.
      */
-    class Integer(val value: Int) : Number
+    data class Integer(val value: Int) : Number
 
     /**
      * A float/double literal.
      */
-    class Decimal(val value: Double) : Number {
+    data class Decimal(val value: Double) : Number {
         companion object {
             const val DECIMAL_POINT = '.'
         }
@@ -297,7 +282,7 @@ class LexicalAnalysis (val code: String) {
     /**
      * A string literal.
      */
-    class Str(val content: String) : Literal {
+    data class Str(val content: String) : Literal {
         companion object {
             const val BOUNDARY = '"'
             const val ESCAPE = '\\'
@@ -313,7 +298,7 @@ class LexicalAnalysis (val code: String) {
     /**
      * The name of a variable, which must be all uppercase.
      */
-    class VariableName(val name: String) : Value {
+    data class VariableName(val name: String) : Value {
         companion object {
             val REGEX = "[_A-Z][_\\dA-Z]*".toRegex()
         }
@@ -324,7 +309,7 @@ class LexicalAnalysis (val code: String) {
      * indistinguishable, any keyword that is not defined in [DefinedToken] will be erroneously parsed as a [MethodName]
      * and it's up to context to determine which one it is.
      */
-    class MethodName(val name: String) : Token {
+    data class MethodName(val name: String) : Token {
         companion object {
             val REGEX = "[_a-z][_\\dA-Za-z]*".toRegex()
         }
@@ -335,7 +320,7 @@ class LexicalAnalysis (val code: String) {
      * indistinguishable, any keyword that is not defined in [DefinedToken] will be erroneously parsed as a [MethodName]
      * and it's up to context to determine which one it is.
      */
-    class ClassName(val name: String) : Token
+    data class ClassName(val name: String) : Token
 
     /**
      * All predefined tokens, including keywords and operators.
@@ -347,12 +332,8 @@ class LexicalAnalysis (val code: String) {
      */
     enum class DefinedToken(
         val value: String,
-        val types: TokenType = MISC,
-        val operatorTypes: List<OperatorType> = listOf()
+        val type: Type = MISC
     ) : Token {
-        TRUE("true", BOOLEAN_LITERAL),
-        FALSE("false", BOOLEAN_LITERAL),
-
         OUTPUT("output", COMMAND),
         INPUT("input", COMMAND),
 
@@ -377,25 +358,42 @@ class LexicalAnalysis (val code: String) {
         COMMA(","),
         MEMBER_INVOCATION("."),
 
-        EQUAL("=", OPERATOR, listOf(NUMERICAL_COMPARISON, STRING_COMPARISON, BOOLEAN)),
-        NOT_EQUAL("≠", OPERATOR, listOf(NUMERICAL_COMPARISON, STRING_COMPARISON, BOOLEAN)),
-        GREATER_THAN_EQUAL(">=", OPERATOR, listOf(NUMERICAL_COMPARISON)),
-        LESS_THAN_EQUAL("<=", OPERATOR, listOf(NUMERICAL_COMPARISON)),
-        GREATER_THAN(">", OPERATOR, listOf(NUMERICAL_COMPARISON)),
-        LESS_THAN("<", OPERATOR, listOf(NUMERICAL_COMPARISON)),
+        EQUAL("=", BINARY_OPERATOR),
+        NOT_EQUAL("≠", BINARY_OPERATOR),
+        GREATER_THAN_EQUAL(">=", BINARY_OPERATOR),
+        LESS_THAN_EQUAL("<=", BINARY_OPERATOR),
+        GREATER_THAN(">", BINARY_OPERATOR),
+        LESS_THAN("<", BINARY_OPERATOR),
 
-        LOGIC_NOT("NOT", OPERATOR, listOf(UNARY)),
-        LOGIC_AND("AND", OPERATOR, listOf(BOOLEAN)),
-        LOGIC_OR("OR", OPERATOR, listOf(BOOLEAN)),
-        LOGIC_XOR("XOR", OPERATOR, listOf(BOOLEAN)),
-        LOGIC_NAND("NAND", OPERATOR, listOf(BOOLEAN)),
-        LOGIC_NOR("NOR", OPERATOR, listOf(BOOLEAN)),
+        LOGIC_NOT("NOT", UNARY_OPERATOR),
+        LOGIC_AND("AND", BINARY_OPERATOR),
+        LOGIC_OR("OR", BINARY_OPERATOR),
+        LOGIC_XOR("XOR", BINARY_OPERATOR),
+        LOGIC_NAND("NAND", BINARY_OPERATOR),
+        LOGIC_NOR("NOR", BINARY_OPERATOR),
 
-        PLUS("+", OPERATOR, listOf(UNARY, STRING, NUMERICAL)),
-        MINUS("-", OPERATOR, listOf(UNARY, NUMERICAL)),
-        MULTIPLY("*", OPERATOR, listOf(NUMERICAL)),
-        DIVIDE("div", OPERATOR, listOf(NUMERICAL)),
-        MODULUS("mod", OPERATOR, listOf(NUMERICAL))
+        PLUS("+", UNARY_AND_BINARY_OPERATOR),
+        MINUS("-", UNARY_AND_BINARY_OPERATOR),
+        MULTIPLY("*", BINARY_OPERATOR),
+        DIVIDE("div", BINARY_OPERATOR),
+        MODULUS("mod", BINARY_OPERATOR),
+        ;
+
+        /**
+         * [KEYWORD], [UNARY_OPERATOR], [BINARY_OPERATOR], and [UNARY_AND_BINARY_OPERATOR] are what the
+         * names suggest.
+         *
+         * [COMMAND] is any statement that always begins with a certain keyword, like `if`, `else`, `loop`, `end`, `output`,
+         * or `input`. Commands are technically also keywords.
+         *
+         * [MISC] is anything else, including parentheses, commas, etc.
+         */
+        enum class Type {
+            KEYWORD, UNARY_OPERATOR, BINARY_OPERATOR, UNARY_AND_BINARY_OPERATOR, COMMAND, MISC
+        }
+
+        val isUnaryOperator get() = type in listOf(UNARY_OPERATOR, UNARY_AND_BINARY_OPERATOR)
+        val isBinaryOperator get() = type in listOf(BINARY_OPERATOR, UNARY_AND_BINARY_OPERATOR)
     }
 
     companion object {
