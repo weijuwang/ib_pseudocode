@@ -1,4 +1,6 @@
-import LexicalAnalysis.*
+package parser
+
+import parser.LexicalAnalysis.*
 
 /**
  * An abstract syntax tree produced by [Parser]. ASTs are further subdivided into [Statement]s and [Expression]s; see

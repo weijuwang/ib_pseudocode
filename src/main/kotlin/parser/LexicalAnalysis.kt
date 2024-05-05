@@ -1,4 +1,6 @@
-import LexicalAnalysis.DefinedToken.Type.*
+package parser
+
+import parser.LexicalAnalysis.DefinedToken.Type.*
 import kotlin.math.pow
 
 /**

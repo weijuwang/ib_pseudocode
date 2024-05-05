@@ -4,11 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="19a055e1-daca-4c4d-bd4a-033519c03c40" name="Changes" comment="Completed expression parsing, including infix notation handling">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/Ast.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/LexicalAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/LexicalAnalysis.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Parser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Parser.kt" afterDir="false" />
+    <list default="true" id="19a055e1-daca-4c4d-bd4a-033519c03c40" name="Changes" comment="Completed parser">
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Ast.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/parser/Ast.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Iterator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/parser/Iterator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/LexicalAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/parser/LexicalAnalysis.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Parser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/parser/Parser.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,7 +152,15 @@
       <option name="project" value="LOCAL" />
       <updated>1714876339936</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Completed parser">
+      <option name="closed" value="true" />
+      <created>1714892346207</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1714892346207</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -162,17 +171,7 @@
     <MESSAGE value="Removed line splitting from lexer" />
     <MESSAGE value="Added basic unary and binary operations to parser, fixed bugs" />
     <MESSAGE value="Completed expression parsing, including infix notation handling" />
-    <option name="LAST_COMMIT_MESSAGE" value="Completed expression parsing, including infix notation handling" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>8</line>
-          <option name="timeStamp" value="19" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Completed parser" />
+    <option name="LAST_COMMIT_MESSAGE" value="Completed parser" />
   </component>
 </project>

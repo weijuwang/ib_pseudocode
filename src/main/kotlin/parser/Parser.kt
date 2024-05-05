@@ -1,5 +1,7 @@
-import LexicalAnalysis.*
-import LexicalAnalysis.DefinedToken.*
+package parser
+
+import parser.LexicalAnalysis.*
+import parser.LexicalAnalysis.DefinedToken.*
 
 /**
  * Attempts to parse a list of tokens from [lexicalAnalysis] into an [Ast].
@@ -391,6 +393,8 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
             null
         }
     }
+
+    constructor(code: String) : this(LexicalAnalysis(code))
 
     companion object {
         /**
