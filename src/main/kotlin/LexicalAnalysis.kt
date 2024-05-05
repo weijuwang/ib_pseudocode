@@ -329,20 +329,20 @@ class LexicalAnalysis (val code: String) {
         val value: String,
         val type: Type = MISC
     ) : Token {
-        OUTPUT("output", COMMAND),
-        INPUT("input", COMMAND),
+        OUTPUT("output", COMMAND_START),
+        INPUT("input", COMMAND_START),
 
-        IF("if", COMMAND),
-        ELSE("else", COMMAND),
+        IF("if", COMMAND_START),
+        ELSE("else", CONTROL),
         THEN("then", KEYWORD),
 
-        LOOP("loop", COMMAND),
+        LOOP("loop", COMMAND_START),
         WHILE("while", KEYWORD),
         UNTIL("until", KEYWORD),
         FROM("from", KEYWORD),
         TO("to", KEYWORD),
 
-        END("end", COMMAND),
+        END("end", CONTROL),
 
         NEWLINE(NEWLINE_CHAR.toString()),
 
@@ -375,13 +375,16 @@ class LexicalAnalysis (val code: String) {
          * [KEYWORD], [UNARY_OPERATOR], [BINARY_OPERATOR], and [UNARY_AND_BINARY_OPERATOR] are what the
          * names suggest.
          *
-         * [COMMAND] is any statement that always begins with a certain keyword, like `if`, `else`, `loop`, `end`, `output`,
-         * or `input`. Commands are technically also keywords.
+         * [COMMAND_START] is a token that signals the start of a certain type of block, like `if`, `loop` `output`,
+         * or `input`.
+         *
+         * [CONTROL] is any token that is used to signal something within a block, like `end` or `else`, but does not
+         * start it.
          *
          * [MISC] is anything else, including parentheses, commas, etc.
          */
         enum class Type {
-            KEYWORD, UNARY_OPERATOR, BINARY_OPERATOR, UNARY_AND_BINARY_OPERATOR, COMMAND, MISC
+            KEYWORD, UNARY_OPERATOR, BINARY_OPERATOR, UNARY_AND_BINARY_OPERATOR, COMMAND_START, CONTROL, MISC
         }
 
         val isUnaryOperator get() = type in listOf(UNARY_OPERATOR, UNARY_AND_BINARY_OPERATOR)

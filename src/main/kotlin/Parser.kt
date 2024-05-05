@@ -11,70 +11,6 @@ import LexicalAnalysis.DefinedToken.*
  * TODO Class members/methods
  */
 class Parser (val lexicalAnalysis: LexicalAnalysis) {
-    interface Ast
-    interface Statement: Ast
-    interface Expression: Ast
-
-    data class Value (
-        val value: LexicalAnalysis.Value
-    ) : Expression
-
-    data class ArrayLiteral (
-        val values: List<Expression>
-    ) : Expression
-
-    data class UnaryOperation (
-        val operator: DefinedToken,
-        val operand: Expression
-    ) : Expression
-
-    data class BinaryOperation (
-        val operator: DefinedToken,
-        val left: Expression,
-        val right: Expression
-    ) : Expression
-
-    data class ArrayAccess (
-        val arrayName: VariableName,
-        val index: Expression
-    ) : Expression
-
-    data class FunctionCall (
-        val functionName: MethodName,
-        val params: List<Expression>
-    ) : Expression, Statement
-
-    data class Output (
-        val expressions: List<Expression>
-    ) : Statement
-
-    data class Input (
-        val variableName: String
-    ) : Statement
-
-    data class If (
-        val branches: Map<Expression, List<Statement>>
-    ) : Statement
-
-    data class LoopWhile (
-        val condition: Expression
-    ) : Statement
-
-    data class LoopUntil (
-        val condition: Expression
-    ) : Statement
-
-    data class LoopRange (
-        val variableName: VariableName,
-        val start: Expression,
-        val end: Expression
-    ) : Statement
-
-    data class Assignment (
-        val variableName: VariableName,
-        val value: Expression
-    ) : Statement
-
     /**
      * The list of tokens obtained from the lexer without their positions in the original file.
      */
@@ -86,9 +22,99 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
     private var index = 0
 
     /**
-     * The parsed abstract syntax tree.
+     * The parsed abstract syntax trees of each statement in the code in order.
      */
-    val result: Ast? = null
+    val result: List<Ast>?
+
+    /**
+     * A list of statements or blocks that always begin with a certain keyword.
+     */
+    private val commands: Map<DefinedToken, () -> Ast.Statement> = mapOf(
+        OUTPUT to {
+            Ast.Output(parseExpressionList())
+        },
+        INPUT to {
+            Ast.Input(nextTokenIf<VariableName>())
+        },
+        IF to {
+            Ast.If(buildMap {
+                // if [condition] then \n [statements \n]
+                fun ifConditionThen() {
+                    val condition = parseExpression()
+                    nextDefinedTokenIf(THEN)
+                    skipNewlines()
+                    put(condition, parseStatements())
+                }
+
+                ifConditionThen()
+
+                while (true) {
+                    // else
+                    if (optional { nextDefinedTokenIf(ELSE) } == null) {
+                        break
+                    }
+
+                    if (optional { nextDefinedTokenIf(IF) } == null) {
+                        // \n
+                        skipNewlines()
+                        // [statements \n]
+                        put(Ast.Value(Bool(true)), parseStatements())
+                        break
+                    } else {
+                        // if
+
+                        // [condition] then \n [statements \n]
+                        ifConditionThen()
+                    }
+                }
+
+                // end
+                nextDefinedTokenIf(END)
+                optional { nextDefinedTokenIf(IF) }
+            })
+        },
+        LOOP to {
+            fun codeInsideBlock(): List<Ast.Statement> {
+                skipNewlines()
+                val loopedCode = parseStatements()
+                nextDefinedTokenIf(END)
+                optional { nextDefinedTokenIf(LOOP) }
+                return loopedCode
+            }
+
+            if (optional { nextDefinedTokenIf(WHILE) } != null) {
+                val condition = parseExpression()
+                val code = codeInsideBlock()
+
+                Ast.LoopWhile(
+                    condition = condition,
+                    code = code
+                )
+            } else if (optional { nextDefinedTokenIf(UNTIL) } != null) {
+                val condition = parseExpression()
+                val code = codeInsideBlock()
+
+                Ast.LoopUntil(
+                    condition = condition,
+                    code = code
+                )
+            } else {
+                val iteratorVariable = nextTokenIf<VariableName>()
+                nextDefinedTokenIf(FROM)
+                val start = parseExpression()
+                nextDefinedTokenIf(TO)
+                val end = parseExpression()
+                val code = codeInsideBlock()
+
+                Ast.LoopRange(
+                    variableName = iteratorVariable,
+                    start = start,
+                    end = end,
+                    code = code
+                )
+            }
+        }
+    )
 
     /**
      * Whether the parser has reached the end of the token list.
@@ -133,6 +159,18 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
         }
 
     /**
+     * Returns the value of the first lambda that does not throw [NullPointerException].
+     */
+    private fun firstValid(vararg parsers: () -> Ast): Ast = resetIfNull {
+        for (parser in parsers) {
+            try {
+                return@resetIfNull parser()
+            } catch (_: NullPointerException) {}
+        }
+        throw NullPointerException()
+    }
+
+    /**
      * Obtains the next token if it's an instance of [T] and [condition] is true. Otherwise, [index] is rewinded to
      * where it was before and a [NullPointerException] is thrown.
      */
@@ -146,8 +184,18 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
      * ```
      * See [nextTokenIf].
      */
-    private fun nextIfDefinedToken(definedToken: DefinedToken) =
+    private fun nextDefinedTokenIf(definedToken: DefinedToken) =
         nextTokenIf<DefinedToken> { it == definedToken }
+
+    /**
+     * Obtains the next token if it's a [DefinedToken] and [condition] is true. Equivalent to
+     * ```
+     * nextTokenIf<DefinedToken>(condition)
+     * ```
+     * See [nextTokenIf].
+     */
+    private fun nextDefinedTokenIf(condition: (DefinedToken) -> Boolean = { true }) =
+        nextTokenIf<DefinedToken>(condition)
 
     /**
      * Parses a list of zero or more [Expression]s separated by commas.
@@ -156,7 +204,25 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
         while (true) {
             try {
                 add(parseExpression())
-                nextIfDefinedToken(COMMA)
+                nextDefinedTokenIf(COMMA)
+            } catch (_: NullPointerException) {
+                break
+            }
+        }
+    }
+
+    /**
+     * Skips all the next newlines. If [atLeastOne] is true, there must be at least one newline or
+     * [NullPointerException] is thrown.
+     */
+    private fun skipNewlines(atLeastOne: Boolean = true) {
+        if (atLeastOne) {
+            nextDefinedTokenIf(NEWLINE)
+        }
+
+        while (true) {
+            try {
+                nextDefinedTokenIf(NEWLINE)
             } catch (_: NullPointerException) {
                 break
             }
@@ -172,7 +238,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
      * The return value might not be a [BinaryOperation] in the case that there is only one value and no binary
      * operators.
      */
-    private fun parseExpression(): Expression = resetIfNull {
+    private fun parseExpression(): Ast.Expression = resetIfNull {
         val operators = ArrayDeque<DefinedToken>() // +
         val values = ArrayDeque(listOf(parseSubExpression())) // a*b c
 
@@ -185,7 +251,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
                 val right = values.removeLast()
                 val left = values.removeLast()
                 values.add(
-                    BinaryOperation(
+                    Ast.BinaryOperation(
                         operator = operators.removeLast(),
                         left = left,
                         right = right
@@ -202,7 +268,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
 
         while (true) {
             val nextOperator = try {
-                nextTokenIf<DefinedToken> { it.isBinaryOperator }
+                nextDefinedTokenIf { it.isBinaryOperator }
             } catch (_: NullPointerException) {
                 break
             }
@@ -225,88 +291,108 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
     /**
      * Parses any expression that could be treated as an operand somewhere in [parseExpression].
      */
-    private fun parseSubExpression(): Expression = resetIfNull {
+    private fun parseSubExpression(): Ast.Expression = resetIfNull {
         try {
-            (::parseFunctionCall or
-                ::parseArrayAccess or
-                ::parseUnary or
-                ::parseArrayLiteral or
+            firstValid(
+                ::parseFunctionCall,
+                ::parseArrayAccess,
+                ::parseUnary,
+                ::parseArrayLiteral,
                 ::parseValue
-            )()
+            ) as Ast.Expression
         } catch (_: NullPointerException) {
-            nextIfDefinedToken(LEFT_PAREN)
+            nextDefinedTokenIf(LEFT_PAREN)
             val result = parseExpression()
-            nextIfDefinedToken(RIGHT_PAREN)
+            nextDefinedTokenIf(RIGHT_PAREN)
 
             result
         }
     }
 
     private fun parseValue() = resetIfNull {
-        val value = nextTokenIf<LexicalAnalysis.Value>()
+        val value = nextTokenIf<Value>()
 
-        Value(value)
+        Ast.Value(value)
     }
 
     private fun parseArrayLiteral() = resetIfNull {
-        nextIfDefinedToken(LEFT_BRACKET)
+        nextDefinedTokenIf(LEFT_BRACKET)
         val values = parseExpressionList()
-        nextIfDefinedToken(RIGHT_BRACKET)
+        nextDefinedTokenIf(RIGHT_BRACKET)
 
-        ArrayLiteral(values)
+        Ast.ArrayLiteral(values)
     }
 
     private fun parseUnary() = resetIfNull {
-        val operator = nextTokenIf<DefinedToken> { it.isUnaryOperator }
+        val operator = nextDefinedTokenIf { it.isUnaryOperator }
         val operand = parseSubExpression()
 
-        UnaryOperation(operator, operand)
+        Ast.UnaryOperation(operator, operand)
     }
 
     private fun parseArrayAccess() = resetIfNull {
         val arrayName = nextTokenIf<VariableName>()
-        nextIfDefinedToken(LEFT_BRACKET)
+        nextDefinedTokenIf(LEFT_BRACKET)
         val index = parseSubExpression()
-        nextIfDefinedToken(RIGHT_BRACKET)
+        nextDefinedTokenIf(RIGHT_BRACKET)
 
-        ArrayAccess(arrayName, index)
+        Ast.ArrayAccess(arrayName, index)
     }
 
     private fun parseFunctionCall() = resetIfNull {
         val functionName = nextTokenIf<MethodName>()
-        nextIfDefinedToken(LEFT_PAREN)
+        nextDefinedTokenIf(LEFT_PAREN)
         val params = parseExpressionList()
-        nextIfDefinedToken(RIGHT_PAREN)
+        nextDefinedTokenIf(RIGHT_PAREN)
 
-        FunctionCall(functionName, params)
+        Ast.FunctionCall(functionName, params)
     }
 
-    fun debug() {
-        println(lexicalAnalysis.tokens)
+    private fun parseCommand(): Ast.Statement = resetIfNull {
+        commands[nextDefinedTokenIf { it.type == Type.COMMAND_START }]!!()
+    }
 
-        try {
-            resetIfNull {
-                println(parseExpression())
-            }
-        } catch (_: NullPointerException) {
-            println("nope")
+    private fun parseAssignment() = resetIfNull {
+        // Left side can be a variable name or array access
+        val leftSide = firstValid(::parseArrayAccess, { Ast.Value(nextTokenIf<VariableName>()) })
+        nextDefinedTokenIf(EQUAL)
+        val rightSide = parseExpression()
+
+        Ast.Assignment(
+            variableName = leftSide as Ast.LeftSide,
+            value = rightSide
+        )
+    }
+
+    private fun parseStatementOrBlock(): Ast.Statement = resetIfNull {
+        firstValid(
+            ::parseFunctionCall,
+            ::parseCommand,
+            ::parseAssignment
+        ) as Ast.Statement
+    }
+
+    private fun parseStatements(): List<Ast.Statement> = resetIfNull {
+        buildList {
+            skipNewlines(false)
+            try {
+                while (true) {
+                    add(parseStatementOrBlock())
+                    skipNewlines()
+                }
+            } catch (_: NullPointerException) {}
         }
-        println("stopped at $index")
+    }
+
+    init {
+        result = try {
+            parseStatements()
+        } catch (_: NullPointerException) {
+            null
+        }
     }
 
     companion object {
-        /**
-         * A list of commands that always begin with a certain keyword.
-         */
-        private val commands: Map<DefinedToken, (List<Token>) -> Unit> = mapOf(
-            OUTPUT to {},
-            INPUT to {},
-            IF to {},
-            ELSE to {},
-            LOOP to {},
-            END to {}
-        )
-
         /**
          * Order of operations for binary operators, listed from lowest to highest.
          */
@@ -323,26 +409,5 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
             }
             .flatten()
             .toMap()
-
-        /**
-         * Usage:
-         * ```
-         * ({ /* value */ }
-         *     or { /* next value */ }
-         *     or { /* next value */ })()
-         * ```
-         * Add as many `or`s as needed. After the last `or`, make sure to evaluate it to actually get the value, since
-         * the raw return value of the whole thing is a lambda.
-         *
-         * Returns a lambda that returns the value of the first lambda that does not throw [NullPointerException].
-         */
-        private infix fun<T: Ast> (() -> T).or(nextOption: () -> T): () -> T =
-            {
-                try {
-                    this()
-                } catch (e: NullPointerException) {
-                    nextOption()
-                }
-            }
     }
 }

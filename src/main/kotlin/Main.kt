@@ -7,5 +7,5 @@ fun main(args: Array<String>) {
         Parser(LexicalAnalysis(code))
     }
     println(timeTaken)
-    parser.debug()
+    println(parser.result)
 }
