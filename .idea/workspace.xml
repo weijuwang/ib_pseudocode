@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="19a055e1-daca-4c4d-bd4a-033519c03c40" name="Changes" comment="" />
+    <list default="true" id="19a055e1-daca-4c4d-bd4a-033519c03c40" name="Changes" comment="Added basic unary and binary operations to parser, fixed bugs">
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/LexicalAnalysis.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/LexicalAnalysis.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Parser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Parser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/main.pseudocode" beforeDir="false" afterPath="$PROJECT_DIR$/test/main.pseudocode" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -15,25 +23,60 @@
       <ProjectState />
     </projectState>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin Enum" />
+        <option value="Kotlin Object" />
+        <option value="Kotlin Class" />
+        <option value="Kotlin Interface" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 4
-}]]></component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;weijuwang&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="a1aca05c-f6b4-4bb1-aa05-05b7169ea11d" />
+        <option name="url" value="https://github.com/weijuwang/ib_pseudocode.git" />
+      </UrlAndAccount>
+    </option>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="2fhgdlCkV4JJdwZKvWUu1fEJthd" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;
   }
-}]]></component>
+}</component>
+  <component name="RunManager">
+    <configuration name="IB Pseudocode" type="JetRunConfigurationType">
+      <option name="MAIN_CLASS_NAME" value="MainKt" />
+      <module name="ib_pseudocode.main" />
+      <option name="PROGRAM_PARAMETERS" value="test/main.pseudocode" />
+      <shortenClasspath name="NONE" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -43,6 +86,64 @@
       <option name="presentableId" value="Default" />
       <updated>1714258813713</updated>
     </task>
+    <task id="LOCAL-00001" summary="Implemented tokenizer">
+      <option name="closed" value="true" />
+      <created>1714331420089</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1714331420089</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Fixed bug where integers at the end of the code wouldn't get processed correctly">
+      <option name="closed" value="true" />
+      <created>1714332844989</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1714332844989</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Added parser, fixed and refactored lexer">
+      <option name="closed" value="true" />
+      <created>1714340582332</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1714340582332</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Refactored lexer and parser">
+      <option name="closed" value="true" />
+      <created>1714459207528</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1714459207528</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Removed line splitting from lexer">
+      <option name="closed" value="true" />
+      <created>1714459248074</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1714459248074</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Added basic unary and binary operations to parser, fixed bugs">
+      <option name="closed" value="true" />
+      <created>1714530606721</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1714530606722</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Implemented tokenizer" />
+    <MESSAGE value="Fixed bug where integers at the end of the code wouldn't get processed correctly" />
+    <MESSAGE value="Added parser, fixed and refactored lexer" />
+    <MESSAGE value="Refactored lexer and parser" />
+    <MESSAGE value="Removed line splitting from lexer" />
+    <MESSAGE value="Added basic unary and binary operations to parser, fixed bugs" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added basic unary and binary operations to parser, fixed bugs" />
   </component>
 </project>

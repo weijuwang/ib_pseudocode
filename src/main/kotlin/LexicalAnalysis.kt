@@ -1,5 +1,4 @@
 import LexicalAnalysis.DefinedToken.Type.*
-
 import kotlin.math.pow
 
 /**
@@ -27,7 +26,6 @@ import kotlin.math.pow
  * - The three defined string escape sequences are `\n`, `\t`, and `\\` for newlines, tabs, and backslashes
  * respectively. If an escape is not in this list, it is interpreted as though the escape backslash were not there; e.g.
  * `\a` and `a` are the same.
- * - The boolean operators `XOR`, `NAND`, and `NOR` are available.
  * - Class names begin with an uppercase letter and then must have one or more letters of either case, underscores, or
  * numbers. The class name cannot be all uppercase; otherwise, it is misinterpreted as a variable name.
  */
@@ -154,9 +152,6 @@ class LexicalAnalysis (val code: String) {
                         alreadyAtEnd
                     }
                 }
-
-
-
 
                 return@nextToken true
             }
@@ -368,9 +363,6 @@ class LexicalAnalysis (val code: String) {
         LOGIC_NOT("NOT", UNARY_OPERATOR),
         LOGIC_AND("AND", BINARY_OPERATOR),
         LOGIC_OR("OR", BINARY_OPERATOR),
-        LOGIC_XOR("XOR", BINARY_OPERATOR),
-        LOGIC_NAND("NAND", BINARY_OPERATOR),
-        LOGIC_NOR("NOR", BINARY_OPERATOR),
 
         PLUS("+", UNARY_AND_BINARY_OPERATOR),
         MINUS("-", UNARY_AND_BINARY_OPERATOR),
