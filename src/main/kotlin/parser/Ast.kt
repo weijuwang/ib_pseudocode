@@ -1,6 +1,6 @@
 package parser
 
-import parser.LexicalAnalysis.*
+import parser.Token.*
 
 /**
  * An abstract syntax tree produced by [Parser]. ASTs are further subdivided into [Statement]s and [Expression]s; see
@@ -8,22 +8,22 @@ import parser.LexicalAnalysis.*
  */
 interface Ast {
     /**
-     *
+     * Any statement or block.
      */
     interface Statement: Ast
 
     /**
-     *
+     * Any possible expression.
      */
     interface Expression: Ast
 
     /**
-     * The left side of an assignment; currently this can be [VariableName] or [ArrayAccess].
+     * The left side of an assignment; currently this can be [Token.Value.VariableName] or [ArrayAccess].
      */
     interface LeftSide: Ast
 
     data class Value (
-        val value: LexicalAnalysis.Value
+        val value: Token.Value
     ) : Expression, LeftSide
 
     data class ArrayLiteral (
@@ -42,12 +42,12 @@ interface Ast {
     ) : Expression
 
     data class ArrayAccess (
-        val arrayName: VariableName,
+        val arrayName: Token.Value.VariableName,
         val index: Expression
     ) : Expression, LeftSide
 
-    data class FunctionCall (
-        val functionName: MethodName,
+    data class MethodCall (
+        val methodCall: MethodName,
         val params: List<Expression>
     ) : Expression, Statement
 
@@ -56,7 +56,7 @@ interface Ast {
     ) : Statement
 
     data class Input (
-        val variableName: VariableName
+        val variableName: Token.Value.VariableName
     ) : Statement
 
     data class If (
@@ -74,9 +74,15 @@ interface Ast {
     ) : Statement
 
     data class LoopRange (
-        val variableName: VariableName,
+        val variableName: Token.Value.VariableName,
         val start: Expression,
         val end: Expression,
+        val code: List<Statement>
+    ) : Statement
+
+    data class MethodDefinition (
+        val methodName: MethodName,
+        val params: List<Token.Value.VariableName>,
         val code: List<Statement>
     ) : Statement
 

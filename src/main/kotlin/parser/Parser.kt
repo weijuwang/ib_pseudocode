@@ -1,18 +1,21 @@
 package parser
 
-import parser.LexicalAnalysis.*
-import parser.LexicalAnalysis.DefinedToken.*
+import parser.Token.*
+import parser.Token.DefinedToken.*
+import parser.Token.Value.VariableName
+import parser.Token.Value.Literal.*
 
 /**
- * Attempts to parse a list of tokens from [lexicalAnalysis] into an [Ast].
+ * Attempts to parse a list of tokens from a [LexicalAnalysis] into an [Ast].
  *
  * The parsed AST is stored in [result]. All classes representing ASTs inherit from `Ast`.
  *
  * If the given tokens aren't syntactically valid, `result` is `null`.
  *
  * TODO Class members/methods
+ * TODO Better error tracing so the user knows where syntax errors are
  */
-class Parser (val lexicalAnalysis: LexicalAnalysis) {
+class Parser (lexicalAnalysis: LexicalAnalysis) {
     /**
      * The list of tokens obtained from the lexer without their positions in the original file.
      */
@@ -115,6 +118,31 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
                     code = code
                 )
             }
+        },
+        METHOD to {
+            val methodName = nextTokenIf<MethodName>()
+            nextDefinedTokenIf(LEFT_PAREN)
+            val params = buildList {
+                while (true) {
+                    try {
+                        add(nextTokenIf<VariableName>())
+                        nextDefinedTokenIf(COMMA)
+                    } catch (_: NullPointerException) {
+                        break
+                    }
+                }
+            }
+            nextDefinedTokenIf(RIGHT_PAREN)
+            skipNewlines()
+            val code = parseStatements()
+            nextDefinedTokenIf(END)
+            optional { nextDefinedTokenIf(METHOD) }
+
+            Ast.MethodDefinition(
+                methodName = methodName,
+                params = params,
+                code = code
+            )
         }
     )
 
@@ -173,7 +201,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
     }
 
     /**
-     * Obtains the next token if it's an instance of [T] and [condition] is true. Otherwise, [index] is rewinded to
+     * Obtains the next token if it's an instance of [T] and [condition] is true. Otherwise, [index] is rewound to
      * where it was before and a [NullPointerException] is thrown.
      */
     private inline fun<reified T: Token> nextTokenIf(crossinline condition: (T) -> Boolean = { true }): T =
@@ -200,7 +228,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
         nextTokenIf<DefinedToken>(condition)
 
     /**
-     * Parses a list of zero or more [Expression]s separated by commas.
+     * Parses a list of zero or more [Ast.Expression]s separated by commas.
      */
     private fun parseExpressionList() = buildList {
         while (true) {
@@ -234,10 +262,10 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
     ////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Parses any possible expression, turning it into a tree of [BinaryOperation]s based on the [orderOfOperations].
+     * Parses any possible expression, turning it into a tree of [Ast.BinaryOperation]s based on the [orderOfOperations].
      * Parentheses are handled in [parseSubExpression].
      *
-     * The return value might not be a [BinaryOperation] in the case that there is only one value and no binary
+     * The return value might not be a [Ast.BinaryOperation] in the case that there is only one value and no binary
      * operators.
      */
     private fun parseExpression(): Ast.Expression = resetIfNull {
@@ -245,7 +273,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
         val values = ArrayDeque(listOf(parseSubExpression())) // a*b c
 
         /**
-         * Combines the last two values in `values` into a [BinaryOperation] where the operator is the last item in
+         * Combines the last two values in `values` into a [Ast.BinaryOperation] where the operator is the last item in
          * `operators`.
          */
         fun combineLastTwo() {
@@ -347,7 +375,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
         val params = parseExpressionList()
         nextDefinedTokenIf(RIGHT_PAREN)
 
-        Ast.FunctionCall(functionName, params)
+        Ast.MethodCall(functionName, params)
     }
 
     private fun parseCommand(): Ast.Statement = resetIfNull {
@@ -376,7 +404,7 @@ class Parser (val lexicalAnalysis: LexicalAnalysis) {
 
     private fun parseStatements(): List<Ast.Statement> = resetIfNull {
         buildList {
-            skipNewlines(false)
+            skipNewlines(atLeastOne = false)
             try {
                 while (true) {
                     add(parseStatementOrBlock())
